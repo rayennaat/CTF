@@ -1,70 +1,63 @@
-import React, { useState, useEffect, useRef } from 'react'; // Import useRef
-import { FiLock } from 'react-icons/fi'; // Only the lock icon is needed
-import { motion } from 'framer-motion';
-import PropTypes from 'prop-types';
-import Task from '../Task/Task';
-import axios from "axios"; 
+import React, { useState, useEffect, useRef } from "react";
+import { FiLock, FiUnlock } from "react-icons/fi";
+import { motion } from "framer-motion";
+import PropTypes from "prop-types";
+import Task from "../Task/Task";
+import axios from "axios";
 
 const TaskCard = () => {
   const [challenges, setChallenges] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [teamId, setTeamId] = useState(null); // ✅ Store teamId in state
 
-  const fetchTeamId = async () => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        console.error("No token found. Please log in.");
-        return;
-      }
-  
-      const response = await axios.get("http://localhost:5000/get-teamid", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json", // ✅ Ensure correct headers
-        },
-        params: { _: Date.now() }, // ✅ Prevent caching issues
-      });
-  
-      console.log("Full Response from API:", response.data); // 🔍 Debugging
-  
-      if (response.data?.teamId) {
-        console.log("Fetched Team ID:", response.data.teamId);
-        return response.data.teamId;
-      } else {
-        console.error("Team ID not found in response.");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error fetching team ID:", error.message);
-      return null;
-    }
-  };
-  fetchTeamId().then(teamId => console.log("Final Team ID:", teamId));
-
-  // Fetch challenges from the API
   useEffect(() => {
-    fetch("http://localhost:5000/api/challenges")  // Change this URL if needed
-      .then(response => response.json())
-      .then(data => {
+    const fetchTeamId = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          console.error("No token found. Please log in.");
+          return;
+        }
+
+        const response = await axios.get("http://localhost:5000/get-teamid", {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          params: { _: Date.now() },
+        });
+
+        if (response.data?.teamId) {
+          console.log("Fetched Team ID:", response.data.teamId);
+          setTeamId(response.data.teamId); // ✅ Save team ID
+        } else {
+          console.error("Team ID not found in response.");
+        }
+      } catch (error) {
+        console.error("Error fetching team ID:", error.message);
+      }
+    };
+
+    fetchTeamId();
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/challenges")
+      .then((response) => response.json())
+      .then((data) => {
         setChallenges(data);
         setLoading(false);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error fetching challenges:", error);
         setLoading(false);
       });
   }, []);
 
-  // Group challenges by category
   const groupedChallenges = challenges.reduce((groups, challenge) => {
-    if (!groups[challenge.category]) {
-      groups[challenge.category] = [];
-    }
+    if (!groups[challenge.category]) groups[challenge.category] = [];
     groups[challenge.category].push(challenge);
     return groups;
   }, {});
-  
+
   const handleTaskClick = (task) => {
     setSelectedTask(task);
   };
@@ -72,38 +65,42 @@ const TaskCard = () => {
   const handleClosePopup = () => {
     setSelectedTask(null);
   };
+
   return (
     <>
-    {loading ? (
-      <p className="text-white text-center">Loading challenges...</p>
-    ) : (
-      Object.entries(groupedChallenges).map(([category, challenges]) => (
-        <div key={category} className="mb-8">
-          <h2 className="text-2xl font-bold text-[#E0E0E0] dark:text-gray-200 mb-4 font-mono">
-            {category} Challenges
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {challenges.map((challenge) => (
-              <div
-                key={challenge._id}
-                className="rounded-md w-[300px] h-[105px] shadow-md transform transition duration-300 hover:scale-105 cursor-pointer"
-                onClick={() => handleTaskClick(challenge)}
-              >
-                <EncryptButton
-                  title={challenge.title}
-                  points={`Points: ${challenge.points}`}
-                />
-              </div>
-            ))}
+      {loading ? (
+        <p className="text-white text-center">Loading challenges...</p>
+      ) : (
+        Object.entries(groupedChallenges).map(([category, challenges]) => (
+          <div key={category} className="mb-8">
+            <h2 className="text-2xl font-bold text-[#E0E0E0] dark:text-gray-200 mb-4 font-mono">
+              {category} Challenges
+            </h2>
+            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {challenges.map((challenge) => {
+                const isSolved = challenge.solvedByTeams.some((team) => team.team_id === teamId);
+
+                return (
+                  <div
+                    key={challenge._id}
+                    className="rounded-md w-[300px] h-[105px] shadow-md transform transition duration-300 hover:scale-105 cursor-pointer"
+                    onClick={() => handleTaskClick(challenge)}
+                  >
+                    <EncryptButton
+                      title={challenge.title}
+                      points={`Points: ${challenge.points}`}
+                      isSolved={isSolved}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))
-    )}
-  
-    {/* Move Task component here */}
-    {selectedTask && <Task task={selectedTask} onClose={handleClosePopup} />}
-  </>
-  
+        ))
+      )}
+
+      {selectedTask && <Task task={selectedTask} onClose={handleClosePopup} />}
+    </>
   );
 };
 
@@ -111,8 +108,8 @@ const CHARS = "!@#$%^&*():{};|,.<>/?";
 const CYCLES_PER_LETTER = 2;
 const SHUFFLE_TIME = 50;
 
-const EncryptButton = ({ title, points }) => {
-  const intervalRef = useRef(null); // useRef is now properly imported
+const EncryptButton = ({ title, points, isSolved }) => {
+  const intervalRef = useRef(null);
   const [text, setText] = useState(title);
   const [text2, setText2] = useState(points);
 
@@ -148,14 +145,18 @@ const EncryptButton = ({ title, points }) => {
       whileTap={{ scale: 0.975 }}
       onMouseEnter={scramble}
       onMouseLeave={stopScramble}
-      className="group relative overflow-hidden rounded-lg border w-[300px] h-[105px] flex flex-col justify-center items-center font-mono font-medium uppercase transition-colors border-neutral-500 bg-neutral-700 text-neutral-300 hover:text-indigo-300"
+      className={`group relative overflow-hidden rounded-lg border w-[300px] h-[105px] flex flex-col justify-center items-center font-mono font-medium uppercase transition-colors ${
+        isSolved
+          ? "border-green-400 bg-green-600 text-white shadow-lg shadow-green-400/50 hover:bg-green-700 hover:shadow-green-500/50"
+          : "border-neutral-500 bg-neutral-700 text-neutral-300 hover:text-indigo-300"
+      }`}
     >
       <div className="relative z-10 flex flex-col items-center gap-1">
         <div className="flex items-center gap-2">
-          <FiLock /> {/* Only the lock icon is shown now */}
-          <span>{text}</span>
+          {isSolved ? <FiUnlock /> : <FiLock />}
+          <span className={`${isSolved ? "text-white" : ""}`}>{text}</span>
         </div>
-        <span className="text-sm text-neutral-400">{text2}</span>
+        <span className={`text-sm ${isSolved ? "text-white" : "text-neutral-400"}`}>{text2}</span>
       </div>
       <motion.span
         initial={{ y: "100%" }}
@@ -170,6 +171,7 @@ const EncryptButton = ({ title, points }) => {
 EncryptButton.propTypes = {
   title: PropTypes.string.isRequired,
   points: PropTypes.string.isRequired,
+  isSolved: PropTypes.bool.isRequired,
 };
 
 export default TaskCard;

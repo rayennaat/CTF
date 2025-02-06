@@ -267,6 +267,52 @@ app.get("/get-teamid", authenticateToken, async (req, res) => {
 });
 
 
+app.get("/task/:taskId", async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    // Step 1: Fetch task (challenge) details
+    const task = await Challenge.findById(taskId);
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    // Step 2: Fetch user details for solvedByUsers
+    const solvedByUsers = await Promise.all(
+      task.solvedByUsers.map(async (entry) => {
+        const user = await User.findById(entry.user_id);
+        return user
+          ? { fullName: user.fullName, time: entry.time }
+          : { fullName: "Unknown", time: entry.time };
+      })
+    );
+
+    res.json({ ...task.toObject(), solvedByUsers }); // Return task + updated solvedByUsers
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+
+
+app.get("/api/users/solved", async (req, res) => {
+  try {
+    const userIds = req.query.userIds?.split(","); // Extract user IDs from query params
+    if (!userIds || userIds.length === 0) {
+      return res.status(400).json({ error: "No user IDs provided" });
+    }
+
+    // Fetch users with only `fullName` and `_id`
+    const users = await User.find({ _id: { $in: userIds } }).select("fullName _id");
+    
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 
 // Add a task
 app.post("/add-challenge", async (req, res) => {

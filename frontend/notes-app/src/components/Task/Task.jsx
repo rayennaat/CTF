@@ -1,9 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Blood from "../../assets/images/blood.png";
 
 const Task = ({ task, onClose }) => {
   const [activeTab, setActiveTab] = useState("challenge");
   const [showHint, setShowHint] = useState(false);
+  const [solves, setSolves] = useState([]);
+
+  useEffect(() => {
+    if (!task || !task.solvedByUsers?.length) return;
+  
+    const userIds = task.solvedByUsers.map(entry => entry.user_id).join(",");
+    
+    fetch(`http://localhost:5000/api/users/solved?userIds=${userIds}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        return res.json();
+      })
+      .then(userData => {
+        const formattedSolves = task.solvedByUsers.map(entry => ({
+          fullName: userData.find(user => user._id === entry.user_id)?.fullName || "Unknown",
+          time: new Date(entry.time).toLocaleString(),
+        }));
+        setSolves(formattedSolves);
+        
+      })
+      .catch(error => console.error("Error fetching users:", error));
+  }, [task]);
+  
 
   if (!task) return null;
 
@@ -119,8 +142,8 @@ const Task = ({ task, onClose }) => {
         )}
 
         {activeTab === "solves" && (
-          <div className="p-4"> {/* Removed text-center */}
-            {task.solves && task.solves.length > 0 ? (
+          <div className="p-4">
+            {solves.length > 0 ? (
               <table className="min-w-full divide-y divide-gray-700 text-gray-300 font-mono">
                 <thead>
                   <tr>
@@ -129,13 +152,11 @@ const Task = ({ task, onClose }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-transparent divide-y divide-gray-800">
-                  {task.solves.map((solve, index) => (
+                  {solves.map((solve, index) => (
                     <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap flex items-center"> {/* Added flex and items-center */}
-                        
-                        {solve.user}{index === 0 && ( // Conditionally render the image
-                          <img src={Blood} alt="First Blood" className="w-5 h-6 ml-2" /> // Added margin-right
-                        )}
+                      <td className="px-6 py-4 whitespace-nowrap flex items-center">
+                        {solve.fullName}
+                        {index === 0 && <img src={Blood} alt="First Blood" className="w-5 h-6 ml-2" />}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">{solve.time}</td>
                     </tr>
@@ -144,10 +165,10 @@ const Task = ({ task, onClose }) => {
               </table>
             ) : (
               <p className="text-gray-300 font-mono text-center">No one solved it yet!</p>
-            )
-            }
+            )}
           </div>
         )}
+
       </div>
     </div>
   );
