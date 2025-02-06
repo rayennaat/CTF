@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const TasksSolved = ({ userId }) => {
   const [solvedChallenges, setSolvedChallenges] = useState([]);
@@ -15,8 +15,8 @@ const TasksSolved = ({ userId }) => {
         );
         setSolvedChallenges(response.data);
       } catch (err) {
-        console.error('Error fetching solved challenges:', err);
-        setError('Failed to fetch solved challenges');
+        console.error("Error fetching solved challenges:", err);
+        setError("Failed to fetch solved challenges");
       } finally {
         setLoading(false);
       }
@@ -48,25 +48,36 @@ const TasksSolved = ({ userId }) => {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {solvedChallenges.map((challenge, idx) => (
-              <tr
-                key={idx}
-                className="bg-[#292929] hover:bg-[#424242] border border-[#424242]"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-gray-100">
-                  {challenge.title}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-100">
-                  {challenge.category}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-100">
-                  {challenge.points}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-100">
-                  {new Date(challenge.time).toLocaleString()} {/* Format the time */}
+            {solvedChallenges.length > 0 ? (
+              solvedChallenges.map((challenge, idx) => (
+                <tr
+                  key={idx}
+                  className="bg-[#292929] hover:bg-[#424242] border border-[#424242]"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-100">
+                    {challenge.title}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-100">
+                    {challenge.category}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-100">
+                    {challenge.points}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-100">
+                    {new Date(challenge.time).toLocaleString()} {/* Format the time */}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="4"
+                  className="px-6 py-4 text-center text-gray-400"
+                >
+                  No tasks solved yet
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
