@@ -13,6 +13,8 @@ const User = () => {
   const [team, setTeam] = useState(null); 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null); // Add userId state
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -41,6 +43,8 @@ const User = () => {
           setFullName(response.data.user.fullName);
           setPoints(response.data.user.points);
           setTeam(response.data.user.team);
+          setUserId(response.data.user._id); // Store userId  
+          console.log('✅ User ID:', response.data.user._id); // Debugging: Log userId
         } else {
           setError('User data not found.');
         }
@@ -78,7 +82,8 @@ const User = () => {
         </div>
 
         <div className="px-10 border border-[#333]">
-          <TasksSolved />
+          <TasksSolved userId={userId}/>
+          
         </div><br />
         
         <div className="flex flex-col">

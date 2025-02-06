@@ -231,6 +231,7 @@ app.get("/get-user", authenticateToken, async (req, res) => {
         fullName: isUser.fullName,
         points: isUser.points,
         team: teamName, // Send only team name
+        _id: isUser._id,
       },
       message: "",
     });
@@ -311,6 +312,37 @@ app.get("/api/users/solved", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+
+app.get('/api/challenges/solved-by-user/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find challenges where the user is in the solvedByUsers array
+    const challenges = await Challenge.find({
+      'solvedByUsers.user_id': userId,
+    }).select('title category points solvedByUsers'); // Select only necessary fields
+
+    // Map the results to include only the relevant data
+    const solvedChallenges = challenges.map((challenge) => {
+      const solvedByUser = challenge.solvedByUsers.find(
+        (entry) => entry.user_id.toString() === userId
+      );
+      return {
+        title: challenge.title,
+        category: challenge.category,
+        points: challenge.points,
+        time: solvedByUser.time, // Time when the user solved the challenge
+      };
+    });
+
+    res.status(200).json(solvedChallenges);
+  } catch (error) {
+    console.error('Error fetching solved challenges:', error);
+    res.status(500).json({ message: 'Failed to fetch solved challenges' });
+  }
+});
+
 
 
 
