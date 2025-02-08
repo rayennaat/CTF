@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 mongoose.connect(config.connectionString);
 
 const User = require("./models/user.model");
-const Team = require("./models/Team.model");
+const Team = require("./models/team.model");
 const Challenge = require("./models/challenge.model"); // Adjust path if needed
 
 
@@ -335,6 +335,157 @@ app.get('/api/challenges/solved-by-user/:userId', async (req, res) => {
         time: solvedByUser.time, // Time when the user solved the challenge
       };
     });
+
+    res.status(200).json(solvedChallenges);
+  } catch (error) {
+    console.error('Error fetching solved challenges:', error);
+    res.status(500).json({ message: 'Failed to fetch solved challenges' });
+  }
+});
+
+
+
+// GET endpoint to fetch users with their team names
+app.get('/api/users-with-teams', async (req, res) => {
+  try {
+    // Fetch all users and populate the team name using teamId
+    const users = await User.find().select('fullName teamId'); // Select only fullName and teamId
+
+    // Map through the users and add the team name
+    const usersWithTeams = await Promise.all(
+      users.map(async (user) => {
+        const team = await Team.findById(user.teamId).select('name'); // Get the team name
+        return {
+          fullName: user.fullName,
+          team: team ? team.name : 'No Team', // If teamId is null, set team to 'No Team'
+        };
+      })
+    );
+
+    res.status(200).json(usersWithTeams);
+  } catch (error) {
+    console.error('Error fetching users with teams:', error);
+    res.status(500).json({ message: 'Failed to fetch users with teams' });
+  }
+});
+
+app.get('/api/teams', async (req, res) => {
+  try {
+    // Fetch teams with only name and link fields
+    const teams = await Team.find().select('name link');
+
+    res.status(200).json(teams);
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    res.status(500).json({ message: 'Failed to fetch teams' });
+  }
+});
+
+
+app.put('/putteams/:id', async (req, res) => {
+  const { id } = req.params; // Team name or ID
+  const updates = req.body; // Fields to update
+
+  try {
+      // Find the team by name or ID
+      const team = await Team.findOne({
+          $or: [{ name: id }, { _id: id }]
+      });
+
+      if (!team) {
+          return res.status(404).json({ message: 'Team not found' });
+      }
+
+      // Update the team with the provided fields
+      Object.keys(updates).forEach((key) => {
+          if (key in team) { // Ensure only valid fields are updated
+              team[key] = updates[key];
+          }
+      });
+
+      // Save the updated team
+      await team.save();
+
+      res.status(200).json({ message: 'Team updated successfully', team });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+
+app.get("/get-team", authenticateToken, async (req, res) => {
+  if (!req.user) {
+    console.log("No user found in request");
+    return res.sendStatus(403);
+  }
+
+  console.log("Decoded user:", req.user); // Debugging: Log the decoded user data
+
+  const { id } = req.user.user; // Access user ID from req.user.user
+
+  try {
+    // Find the user by ID
+    const user = await User.findOne({ _id: id });
+
+    if (!user) {
+      console.log("User not found in database");
+      return res.sendStatus(401);
+    }
+
+    // Check if the user has a teamId
+    if (!user.teamId) {
+      return res.status(404).json({ message: "User is not part of a team" });
+    }
+
+    // Find the team by teamId
+    const team = await Team.findOne({ _id: user.teamId }, 'name points bio link'); // Only fetch required fields
+
+    if (!team) {
+      console.log("Team not found in database");
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    // Return the team details, including teamId
+    return res.json({
+      team: {
+        _id: team._id, // Include teamId in the response
+        name: team.name,
+        points: team.points,
+        bio: team.bio,
+        link: team.link,
+      },
+      message: "Team details fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching team details:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// GET request to fetch challenges solved by the user's team
+app.get('/team/solved-challenges/:teamId', async (req, res) => {
+  try {
+    const teamId = req.params.teamId;
+    console.log('Team ID:', teamId);
+
+    const challenges = await Challenge.find({
+      'solvedByTeams.team_id': teamId.toString(),
+    }).select('title category points solvedByTeams');
+
+    const solvedChallenges = challenges.map((challenge) => {
+      const solvedByTeam = challenge.solvedByTeams.find(
+        (entry) => entry.team_id.toString() === teamId.toString()
+      ) || {}; // Prevent undefined
+
+      return {
+        title: challenge.title,
+        category: challenge.category,
+        points: challenge.points,
+        time: solvedByTeam.time || null, // Avoid accessing undefined properties
+      };
+    }).filter(Boolean); // Remove null values
 
     res.status(200).json(solvedChallenges);
   } catch (error) {

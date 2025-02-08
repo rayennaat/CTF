@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import UserBar from '../../components/UserBar/UserBar';
 import SearchTeam from '../../components/UserBar/SearchTeam';
-import TeamCards, { teamsData } from '../../components/Cards/TeamCards';
+import TeamCards from '../../components/Cards/TeamCards';
 import TabelTeams from '../../components/Tabels/TabelTeams';
-import table from "../../assets/images/table.png"
-import cards from "../../assets/images/cards.png"
 import { PiCardsThreeLight } from "react-icons/pi";
 import { VscTable } from "react-icons/vsc";
 
 const Teams = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredTeams = teamsData.filter(team =>
-    team.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+ 
   const [viewMode, setViewMode] = useState('cards'); // Initial view mode (set to 'cards' for default hover)
 
   const handleViewModeChange = (mode) => {
@@ -57,8 +53,8 @@ const Teams = () => {
             <VscTable className="h-4 w-4 mx-auto" />
           </button>
         </div>
-        {viewMode === 'cards' && <TeamCards filteredTeams={filteredTeams} />}
-        {viewMode === 'table' && <TabelTeams teamsData={teamsData} />}
+        {viewMode === 'cards' && <TeamCards />}
+        {viewMode === 'table' && <TabelTeams />}
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import { BumpChart } from "../../Graphs/Bump";
 import Bump from "../../assets/images/bump.png"
 import Bar2 from "../../assets/images/Bar2.png"
 import line2 from "../../assets/images/chart.png"
-import TabelTeams from "../../components/Tabels/TabelTeams";
+import TabelScore from "../../components/Tabels/TabelScore";
 
 
 
@@ -58,7 +58,7 @@ const Scoreboard = () => {
         {viewMode === "bump" && <BumpChart />}
       </div> <br />
       <div className="w-full max-w-7xl mx-auto p-4">  
-        <TabelTeams/>
+        <TabelScore/>
         </div>      
     </div>
   );
