@@ -6,7 +6,17 @@ const challengeSchema = new mongoose.Schema({
   category: { type: String, required: true },
   description: { type: String, default: "" },
   hint: { type: String, default: "" },
-  resource: { type: String, default: "" },
+  resource: {
+    type: String,
+    default: "",
+    validate: {
+      validator: function (value) {
+        if (!value) return true; // Allow empty resource
+        return /\.(rar|zip)$/i.test(value); // Ensures only .rar or .zip files are allowed
+      },
+      message: "Resource file must be in .rar or .zip format.",
+    },
+  },
   solvedByTeams: [
     {
       team_id: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
@@ -21,15 +31,6 @@ const challengeSchema = new mongoose.Schema({
   ],
 });
 
-
-
 const Challenge = mongoose.model('Challenge', challengeSchema);
 
 module.exports = Challenge;
-
-/*
-const challengeSchema = new mongoose.Schema({
-
-});
-
-*/

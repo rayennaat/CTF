@@ -6,6 +6,7 @@ const userSchema = new Schema({
     ip: { type: String, required: true }, // Stores IP as a string (IPv4 or IPv6 format)
     fullName: { type: String, required: true }, // User's full name, trimmed
     email: { type: String, required: true }, // Unique and lowercase email
+    rawEmail: { type: String, required: true }, // Raw email for display
     password: { type: String, required: true }, // Hashed password
     profilePic: { type: String, default: null }, // Optional, stores URL or path to the image
     teamId: { type: String, default: null }, // Reference to the Team model

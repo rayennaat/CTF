@@ -8,9 +8,9 @@ const Task = ({ task, onClose }) => {
 
   useEffect(() => {
     if (!task || !task.solvedByUsers?.length) return;
-  
+
     const userIds = task.solvedByUsers.map(entry => entry.user_id).join(",");
-    
+
     fetch(`http://localhost:5000/api/users/solved?userIds=${userIds}`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
@@ -22,11 +22,9 @@ const Task = ({ task, onClose }) => {
           time: new Date(entry.time).toLocaleString(),
         }));
         setSolves(formattedSolves);
-        
       })
       .catch(error => console.error("Error fetching users:", error));
   }, [task]);
-  
 
   if (!task) return null;
 
@@ -49,7 +47,6 @@ const Task = ({ task, onClose }) => {
         >
           ✖
         </button>
-
         <div className="flex mb-4 border-b border-gray-700">
           <button
             className={`px-4 py-2 font-mono ${
@@ -72,11 +69,9 @@ const Task = ({ task, onClose }) => {
             SOLVES
           </button>
         </div>
-
         {/* Conditional Content */}
         {activeTab === "challenge" && (
           <div>
-            {/* ... (Challenge content - title, points, description, resource, hint) */}
             <h1 className="text-3xl font-mono font-bold mb-4">
               🕵️‍♂️ {task.title}
             </h1>
@@ -86,31 +81,28 @@ const Task = ({ task, onClose }) => {
             <p className="text-sm font-mono text-gray-300 mb-6 border-l-4 pl-4 border-green-500">
               {task.description}
             </p>
-
             {task.resource && (
               <div className="mt-4">
                 <p className="text-sm font-mono text-gray-300 mb-2 border-l-4 pl-4 border-green-400">
                   Resource:
                 </p>
-                {task.resource.startsWith("http") && !task.resource.endsWith(".zip") ? (
-                  <a
-                    href={task.resource}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-green-400 hover:underline"
-                  >
-                    Open Resource Link
-                  </a>
-                ) : task.resource.endsWith(".zip") ? (
-                  <a href={task.resource} download className="text-green-400 hover:underline">
-                    Download Folder/Archive
-                  </a>
-                ) : (
-                  <p className="text-sm font-mono text-gray-300">{task.resource}</p>
-                )}
+                <a
+                  href={`http://localhost:5000${task.resource}`}
+                  download
+                  className="text-green-400 hover:underline"
+                >
+                  Download Resource
+                </a>
               </div>
             )}
-
+            {!task.resource && (
+              <div className="mt-4">
+                <p className="text-sm font-mono text-gray-300 mb-2 border-l-4 pl-4 border-green-400">
+                  Resource:
+                </p>
+                <p className="text-sm font-mono text-gray-300">No Resource Available</p>
+              </div>
+            )}
             {task.hint && (
               <div>
                 <button
@@ -124,23 +116,21 @@ const Task = ({ task, onClose }) => {
                     {task.hint}
                   </p>
                 )}
-                
               </div>
             )}
             <input
-                  type="text"
-                  placeholder="Enter your flag here..."
-                  className="w-full mt-3 px-4 py-2 text-green-300 bg-black border border-green-500 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 font-mono"
-                />
-                <button
-                  className="mt-6 px-6 py-2 bg-green-500 hover:bg-green-600 text-black font-mono font-bold rounded-md shadow-lg transition-transform duration-300 hover:scale-105"
-                  onClick={onClose}
-                >
-                  Submit Flag
-                </button>
+              type="text"
+              placeholder="Enter your flag here..."
+              className="w-full mt-3 px-4 py-2 text-green-300 bg-black border border-green-500 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 font-mono"
+            />
+            <button
+              className="mt-6 px-6 py-2 bg-green-500 hover:bg-green-600 text-black font-mono font-bold rounded-md shadow-lg transition-transform duration-300 hover:scale-105"
+              onClick={onClose}
+            >
+              Submit Flag
+            </button>
           </div>
         )}
-
         {activeTab === "solves" && (
           <div className="p-4">
             {solves.length > 0 ? (
@@ -168,7 +158,6 @@ const Task = ({ task, onClose }) => {
             )}
           </div>
         )}
-
       </div>
     </div>
   );
